@@ -66,6 +66,8 @@ class TransparentOverlay(QLabel):
 		self.idle_image_path = self.config.get("Settings", "idle_image_path", fallback="idle.png")
 		self.talking_image_path = self.config.get("Settings", "talking_image_path", fallback="talk.png")
 		self.scaling_factor = self.config.getfloat("Settings", "scaling_factor", fallback=1.1)
+		self.animation_interval = self.config.getint("Settings", "animation_interval", fallback=50)
+		self.shake_intensity = self.config.getint("Settings", "shake_intensity", fallback=2)
 
 	def load_state(self):
 		self.last_position = tuple(map(int, self.state.get("State", "last_position", fallback="100,100").split(',')))
@@ -111,7 +113,7 @@ class TransparentOverlay(QLabel):
 
 	def start_animation(self):
 		if not self.animation_timer.isActive():
-			self.animation_timer.start(50) 
+			self.animation_timer.start(self.animation_interval) 
 
 	def stop_animation(self):
 		if self.animation_timer.isActive():
@@ -120,8 +122,8 @@ class TransparentOverlay(QLabel):
 
 	def perform_animation(self):
 		if self.is_talking:
-			random_offset_x = random.randint(-2, 2)  # Random horizontal offset
-			random_offset_y = random.randint(-2, 2)  # Random vertical offset
+			random_offset_x = random.randint(-self.shake_intensity, self.shake_intensity)
+			random_offset_y = random.randint(-self.shake_intensity, self.shake_intensity)
 			self.move(self.original_pos + QPoint(random_offset_x, random_offset_y))
 		else:
 			self.move(self.original_pos)  # Reset to the original position
@@ -183,6 +185,8 @@ def main():
 			"idle_image_path": "idle.png",
 			"talking_image_path": "talk.png",
 			"scaling_factor": 1.1,
+			"animation_interval": 50,
+			"shake_intensity": 2,
 			"threshold": 4000,
 			"sample_rate": 30
 		}
