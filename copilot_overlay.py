@@ -4,41 +4,51 @@ from PyQt5.QtCore import Qt, QTimer, QPoint
 import sys
 from sound_detector import SoundDetector
 import random
+import configparser
+import os
+import logging
 
-# Configuration
-idle_image_path = "idle.png"  	# Replace with your darkened PNG path
-talking_image_path = "talk.png"	# Replace with your bright PNG path
-scaling_factor = 1.1  			# Scale the image by this factor	
+# Configuration and state file paths
+CONFIG_FILE = "config.ini"
+STATE_FILE = "state.ini"
+
+# Set up logging
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
+logger = logging.getLogger(__name__)
 
 class TransparentOverlay(QLabel):
-	def __init__(self):
+	def __init__(self, config, state):
 		super().__init__()
-		
+
+		self.config = config
+		self.state = state
+		self.load_config()
+		self.load_state()
+
 		# Load images
 		try:
-			self.idle_image = QPixmap(idle_image_path)
-			self.talking_image = QPixmap(talking_image_path)
+			self.idle_image = QPixmap(self.idle_image_path)
+			self.talking_image = QPixmap(self.talking_image_path)
 		except Exception as e:
-			print(f"Error loading images: {e}")
+			logger.error(f"Error loading images: {e}")
 			sys.exit(1)
 
 		self.current_image = self.idle_image
-
-		# Initial scaling
-		self.scale_ratio = 1.0
 
 		# Set up the QLabel
 		self.setPixmap(self.idle_image)
 		self.setWindowFlags(Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint | Qt.Tool)
 		self.setAttribute(Qt.WA_TranslucentBackground)
 		self.setAttribute(Qt.WA_NoSystemBackground)
-		self.setGeometry(100, 100, self.idle_image.width(), self.idle_image.height())  # Position and size
+
+		# Restore position and size
+		self.setGeometry(self.last_position[0], self.last_position[1], self.idle_image.width(), self.idle_image.height())
+		self.scale_ratio = self.last_scale_ratio
+		self.locked = self.last_locked_state
+		self.update_image()
 
 		# Drag variables
 		self.drag_start_position = None
-
-		# Lock state
-		self.locked = False
 
 		# Talking state
 		self.is_talking = False
@@ -51,6 +61,35 @@ class TransparentOverlay(QLabel):
 
 		# Original position to reset after shaking
 		self.original_pos = self.pos()
+
+	def load_config(self):
+		self.idle_image_path = self.config.get("Settings", "idle_image_path", fallback="idle.png")
+		self.talking_image_path = self.config.get("Settings", "talking_image_path", fallback="talk.png")
+		self.scaling_factor = self.config.getfloat("Settings", "scaling_factor", fallback=1.1)
+
+	def load_state(self):
+		self.last_position = tuple(map(int, self.state.get("State", "last_position", fallback="100,100").split(',')))
+		self.last_scale_ratio = self.state.getfloat("State", "scale_ratio", fallback=1.0)
+		self.last_locked_state = self.state.getboolean("State", "locked", fallback=False)
+
+	def save_state(self):
+		self.state.set("State", "last_position", f"{self.x()},{self.y()}")
+		self.state.set("State", "scale_ratio", str(self.scale_ratio))
+		self.state.set("State", "locked", str(self.locked))
+
+		with open(STATE_FILE, "w") as state_file:
+			self.state.write(state_file)
+
+	def validate_config(self):
+		required_settings = ["idle_image_path", "talking_image_path", "scaling_factor"]
+		for setting in required_settings:
+			if not self.config.has_option("Settings", setting):
+				logger.error(f"Missing required setting: {setting}. Using fallback.")
+		# Validation done; missing keys are handled by `fallback` in `get`.
+
+	def closeEvent(self, event):
+		self.save_state()
+		event.accept()
 
 	def switch_to_talking(self):
 		if not self.is_talking:
@@ -72,7 +111,7 @@ class TransparentOverlay(QLabel):
 
 	def start_animation(self):
 		if not self.animation_timer.isActive():
-			self.animation_timer.start(50)  # Adjust the interval for faster shaking (milliseconds)
+			self.animation_timer.start(50) 
 
 	def stop_animation(self):
 		if self.animation_timer.isActive():
@@ -101,7 +140,7 @@ class TransparentOverlay(QLabel):
 
 	def mouseReleaseEvent(self, event):
 		if not self.locked and event.button() == Qt.LeftButton:
-			self.drag_start_position = None			
+			self.drag_start_position = None
 			event.accept()
 
 	# Handle key presses for lock and close
@@ -112,14 +151,15 @@ class TransparentOverlay(QLabel):
 			event.accept()
 		elif event.key() == Qt.Key_Q:  # Press 'Q' to close
 			print("Closing overlay...")
-			QApplication.instance().quit()  # Close the application
+			self.save_state()
+			QApplication.instance().quit()
 			event.accept()
 		elif event.key() == Qt.Key_Plus or event.key() == Qt.Key_Equal:  # '+' to scale up
 			if self.locked:
 				print("Cannot scale while locked.")
 				event.ignore()
 				return
-			self.scale_ratio *= scaling_factor
+			self.scale_ratio *= self.scaling_factor
 			self.update_image()
 			print(f"Scaled up: ratio={self.scale_ratio:.2f}")
 			event.accept()
@@ -128,21 +168,49 @@ class TransparentOverlay(QLabel):
 				print("Cannot scale while locked.")
 				event.ignore()
 				return
-			self.scale_ratio /= scaling_factor
+			self.scale_ratio /= self.scaling_factor
 			self.update_image()
 			print(f"Scaled down: ratio={self.scale_ratio:.2f}")
 			event.accept()
-		elif event.key() == Qt.Key_W:  # 'W' to wiggle
-			self.start_shaking()
-			print("Wiggle animation triggered!")
-			event.accept()
 
 def main():
+	config = configparser.ConfigParser()
+	state = configparser.ConfigParser()
+
+	# Load or create configuration
+	if not os.path.exists(CONFIG_FILE):
+		config["Settings"] = {
+			"idle_image_path": "idle.png",
+			"talking_image_path": "talk.png",
+			"scaling_factor": 1.1,
+			"threshold": 4000,
+			"sample_rate": 30
+		}
+		with open(CONFIG_FILE, "w") as config_file:
+			config.write(config_file)
+
+	if not os.path.exists(STATE_FILE):
+		state["State"] = {
+			"last_position": "100,100",
+			"scale_ratio": 1.0,
+			"locked": False
+		}
+		with open(STATE_FILE, "w") as state_file:
+			state.write(state_file)
+
+	config.read(CONFIG_FILE)
+	state.read(STATE_FILE)
+
 	app = QApplication(sys.argv)
+	overlay = TransparentOverlay(config, state)
+	# Validate configuration
+	overlay.validate_config()
 
-	overlay = TransparentOverlay()
+	# Extract detector settings
+	threshold = config.getint("Settings", "threshold", fallback=4000)
+	sample_rate = config.getint("Settings", "sample_rate", fallback=30)
 
-	detector = SoundDetector(threshold=4000, sample_rate=30)
+	detector = SoundDetector(threshold=threshold, sample_rate=sample_rate)
 	detector.on_sound_detected = lambda volume: overlay.switch_to_talking()
 	detector.on_no_sound_detected = lambda volume: overlay.switch_to_idle()
 
