@@ -1,27 +1,25 @@
-from PyQt5.QtWidgets import QApplication, QLabel
+from PyQt5.QtWidgets import QApplication, QLabel, QMessageBox
 from PyQt5.QtGui import QPixmap
-from PyQt5.QtCore import Qt, QTimer, QPoint
+from PyQt5.QtCore import Qt, QTimer, QPoint, QSettings
 import sys
 from sound_detector import SoundDetector
 import random
 import configparser
 import os
 import logging
-
 # Configuration and state file paths
 CONFIG_FILE = "config.ini"
-STATE_FILE = "state.ini"
 
 # Set up logging
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 logger = logging.getLogger(__name__)
 
 class TransparentOverlay(QLabel):
-	def __init__(self, config, state):
+	def __init__(self, config):
 		super().__init__()
 
 		self.config = config
-		self.state = state
+		self.settings = QSettings("PNGCoPilot", "Overlay")
 		self.load_config()
 		self.load_state()
 
@@ -30,19 +28,20 @@ class TransparentOverlay(QLabel):
 			self.idle_image = QPixmap(self.idle_image_path)
 			self.talking_image = QPixmap(self.talking_image_path)
 		except Exception as e:
+			QMessageBox.critical(self, "Error", f"Failed to load images. {e}")
 			logger.error(f"Error loading images: {e}")
 			sys.exit(1)
 
 		self.current_image = self.idle_image
 
-		# Set up the QLabel
+		# Set up QLabel
 		self.setPixmap(self.idle_image)
 		self.setWindowFlags(Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint | Qt.Tool)
 		self.setAttribute(Qt.WA_TranslucentBackground)
 		self.setAttribute(Qt.WA_NoSystemBackground)
 
-		# Restore position and size
-		self.setGeometry(self.last_position[0], self.last_position[1], self.idle_image.width(), self.idle_image.height())
+		# Restore position, size, and state
+		self.setGeometry(self.last_position.x(), self.last_position.y(), self.idle_image.width(), self.idle_image.height())
 		self.scale_ratio = self.last_scale_ratio
 		self.locked = self.last_locked_state
 		self.update_image()
@@ -70,24 +69,20 @@ class TransparentOverlay(QLabel):
 		self.shake_intensity = self.config.getint("Settings", "shake_intensity", fallback=2)
 
 	def load_state(self):
-		self.last_position = tuple(map(int, self.state.get("State", "last_position", fallback="100,100").split(',')))
-		self.last_scale_ratio = self.state.getfloat("State", "scale_ratio", fallback=1.0)
-		self.last_locked_state = self.state.getboolean("State", "locked", fallback=False)
+		self.last_position = self.settings.value("last_position", QPoint(100, 100), type=QPoint)
+		self.last_scale_ratio = self.settings.value("scale_ratio", 1.0, type=float)
+		self.last_locked_state = self.settings.value("locked", False, type=bool)
 
 	def save_state(self):
-		self.state.set("State", "last_position", f"{self.x()},{self.y()}")
-		self.state.set("State", "scale_ratio", str(self.scale_ratio))
-		self.state.set("State", "locked", str(self.locked))
-
-		with open(STATE_FILE, "w") as state_file:
-			self.state.write(state_file)
+		self.settings.setValue("last_position", QPoint(self.x(), self.y()))
+		self.settings.setValue("scale_ratio", self.scale_ratio)
+		self.settings.setValue("locked", self.locked)
 
 	def validate_config(self):
 		required_settings = ["idle_image_path", "talking_image_path", "scaling_factor"]
 		for setting in required_settings:
 			if not self.config.has_option("Settings", setting):
 				logger.error(f"Missing required setting: {setting}. Using fallback.")
-		# Validation done; missing keys are handled by `fallback` in `get`.
 
 	def closeEvent(self, event):
 		self.save_state()
@@ -113,7 +108,7 @@ class TransparentOverlay(QLabel):
 
 	def start_animation(self):
 		if not self.animation_timer.isActive():
-			self.animation_timer.start(self.animation_interval) 
+			self.animation_timer.start(self.animation_interval)
 
 	def stop_animation(self):
 		if self.animation_timer.isActive():
@@ -177,7 +172,6 @@ class TransparentOverlay(QLabel):
 
 def main():
 	config = configparser.ConfigParser()
-	state = configparser.ConfigParser()
 
 	# Load or create configuration
 	if not os.path.exists(CONFIG_FILE):
@@ -193,20 +187,11 @@ def main():
 		with open(CONFIG_FILE, "w") as config_file:
 			config.write(config_file)
 
-	if not os.path.exists(STATE_FILE):
-		state["State"] = {
-			"last_position": "100,100",
-			"scale_ratio": 1.0,
-			"locked": False
-		}
-		with open(STATE_FILE, "w") as state_file:
-			state.write(state_file)
-
 	config.read(CONFIG_FILE)
-	state.read(STATE_FILE)
 
 	app = QApplication(sys.argv)
-	overlay = TransparentOverlay(config, state)
+	overlay = TransparentOverlay(config)
+
 	# Validate configuration
 	overlay.validate_config()
 
