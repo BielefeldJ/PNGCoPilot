@@ -1,2 +1,2 @@
 # PNGCoPilot
-PNG Tuberlike overlay I use for EDCoPilot
+PNG-Tuber like overlay I use for EDCoPilot
