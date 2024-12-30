@@ -42,7 +42,7 @@ class SoundDetector:
 		while device_index is None:
 			try:
 				user_choice = int(input("Enter the device index to use: "))
-				if user_choice < 0 or user_choice >= len(available_devices):
+				if user_choice not in [device[0] for device in available_devices]:
 					print("Invalid index. Please try again.")
 				else:
 					device_index = available_devices[user_choice][0]
