@@ -202,7 +202,7 @@ def main():
 
 	detector = SoundDetector(device_index=device_index ,threshold=threshold, sample_rate=sample_rate)
 	if device_index == "":
-		device_index = detector.getSounddeviceIndex()
+		device_index = detector.get_device_index()
 		config.set("Settings", "device_index", str(device_index))
 		with open(CONFIG_FILE, "w") as config_file:
 			config.write(config_file)

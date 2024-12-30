@@ -106,7 +106,7 @@ class SoundDetector:
 		if self._thread:
 			self._thread.join()
 	
-	def getSounddeviceIndex(self):
+	def get_device_index(self):
 		return self.device_index
 
 # Example usage
