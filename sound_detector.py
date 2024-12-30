@@ -57,15 +57,16 @@ class SoundDetector:
 		CHANNELS = 1  # Single audio channel (mono)
 		RATE = 44100  # Sampling rate in Hz
 
-		p = pyaudio.PyAudio()
-
-		# Open audio stream
-		stream = p.open(format=FORMAT,
-						channels=CHANNELS,
-						rate=RATE,
-						input=True,
-						input_device_index=self.device_index,
-						frames_per_buffer=CHUNK)
+		try:
+			p = pyaudio.PyAudio()
+			stream = p.open(format=FORMAT,
+							channels=CHANNELS,
+							rate=RATE,
+							input=True,
+							input_device_index=self.device_index,
+							frames_per_buffer=CHUNK)
+		except Exception as e:
+			raise RuntimeError(f"Failed to open audio stream: {e}")
 
 		print("SoundDetector started. Listening for sound...")
 		try:
