@@ -198,8 +198,15 @@ def main():
 	# Extract detector settings
 	threshold = config.getint("Settings", "threshold", fallback=4000)
 	sample_rate = config.getint("Settings", "sample_rate", fallback=30)
+	device_index = config.get("Settings", "device_index", fallback="")
 
-	detector = SoundDetector(threshold=threshold, sample_rate=sample_rate)
+	detector = SoundDetector(device_index=device_index ,threshold=threshold, sample_rate=sample_rate)
+	if device_index == "":
+		device_index = detector.getSounddeviceIndex()
+		config.set("Settings", "device_index", str(device_index))
+		with open(CONFIG_FILE, "w") as config_file:
+			config.write(config_file)
+
 	detector.on_sound_detected = lambda volume: overlay.switch_to_talking()
 	detector.on_no_sound_detected = lambda volume: overlay.switch_to_idle()
 
