@@ -12,14 +12,14 @@ class SoundDetector:
 		:param threshold: Volume threshold to detect sound.
 		:param sample_rate: Number of times per second to process audio.
 		"""
-		self.device_index = device_index
+		self.device_index = int(device_index) if device_index is not None else None
 		self.threshold = threshold
 		self.sample_rate = sample_rate  # Samples per second
 		self._running = False
 		self.on_sound_detected = None
 		self.on_no_sound_detected = None
 
-		if self.device_index is None:
+		if self.device_index is None or self.device_index == "":
 			self.device_index = self._select_device()
 
 	def _select_device(self):
