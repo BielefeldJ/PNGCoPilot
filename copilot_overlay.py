@@ -72,6 +72,7 @@ class TransparentOverlay(QLabel):
 		self.animation_interval = self.config.getint("OverlaySettings", "animation_interval", fallback=50)
 		self.shake_intensity = self.config.getint("OverlaySettings", "shake_intensity", fallback=2)
 		self.animation_delay = self.config.getfloat("OverlaySettings", "animation_delay", fallback=0.3)
+		self.character = self.config.get("OverlaySettings", "character", fallback="<EDCoPilot>")
 
 	def load_state(self):
 		self.last_position = self.settings.value("last_position", QPoint(100, 100), type=QPoint)
@@ -93,15 +94,15 @@ class TransparentOverlay(QLabel):
 		self.save_state()
 		event.accept()
 
-	def switch_to_talking(self):
-		if not self.is_talking:
+	def switch_to_talking(self, character):
+		if not self.is_talking and self.character == character:
 			self.is_talking = True
 			self.current_image = self.talking_image
 			sleep(self.animation_delay)  # Delay because it tales copilot some time before it starts talking
 			self.update_image()
 
-	def switch_to_idle(self):
-		if self.is_talking:
+	def switch_to_idle(self, character):
+		if self.is_talking and self.character == character:
 			self.is_talking = False
 			self.current_image = self.idle_image
 			self.update_image()
@@ -190,7 +191,8 @@ def main():
 			"animation_delay": 0.3
 		}
 		config["EDCoPilotSettings"] = {
-			"edcopilot_dir": "C:\\EDCoPilot"
+			"edcopilot_dir": "C:\\EDCoPilot",
+			"character": "<EDCoPilot>"
 		}
 		with open(CONFIG_FILE, "w") as config_file:
 			config.write(config_file)
@@ -210,8 +212,8 @@ def main():
 	manager = EDCoPilotSpeechManager(speech_status_file, speech_request_file)	
 	
 	# Start watching for speech events
-	manager.on_is_speaking = lambda character: overlay.switch_to_talking()
-	manager.on_stop_speaking = lambda character: overlay.switch_to_idle()
+	manager.on_is_speaking = lambda character: overlay.switch_to_talking(character)
+	manager.on_stop_speaking = lambda character: overlay.switch_to_idle(character)
 	manager.start_watching()
 	overlay.show()
 
