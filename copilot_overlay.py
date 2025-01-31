@@ -66,12 +66,12 @@ class TransparentOverlay(QLabel):
 		self.original_pos = self.pos()
 
 	def load_config(self):
-		self.idle_image_path = self.config.get("Settings", "idle_image_path", fallback="idle.png")
-		self.talking_image_path = self.config.get("Settings", "talking_image_path", fallback="talk.png")
-		self.scaling_factor = self.config.getfloat("Settings", "scaling_factor", fallback=1.1)
-		self.animation_interval = self.config.getint("Settings", "animation_interval", fallback=50)
-		self.shake_intensity = self.config.getint("Settings", "shake_intensity", fallback=2)
-		self.animation_delay = self.config.getfloat("Settings", "animation_delay", fallback=0.3)
+		self.idle_image_path = self.config.get("OverlaySettings", "idle_image_path", fallback="idle.png")
+		self.talking_image_path = self.config.get("OverlaySettings", "talking_image_path", fallback="talk.png")
+		self.scaling_factor = self.config.getfloat("OverlaySettings", "scaling_factor", fallback=1.1)
+		self.animation_interval = self.config.getint("OverlaySettings", "animation_interval", fallback=50)
+		self.shake_intensity = self.config.getint("OverlaySettings", "shake_intensity", fallback=2)
+		self.animation_delay = self.config.getfloat("OverlaySettings", "animation_delay", fallback=0.3)
 
 	def load_state(self):
 		self.last_position = self.settings.value("last_position", QPoint(100, 100), type=QPoint)
@@ -86,7 +86,7 @@ class TransparentOverlay(QLabel):
 	def validate_config(self):
 		required_settings = ["idle_image_path", "talking_image_path", "scaling_factor"]
 		for setting in required_settings:
-			if not self.config.has_option("Settings", setting):
+			if not self.config.has_option("OverlaySettings", setting):
 				logger.error(f"Missing required setting: {setting}. Using fallback.")
 
 	def closeEvent(self, event):
@@ -181,14 +181,16 @@ def main():
 
 	# Load or create configuration
 	if not os.path.exists(CONFIG_FILE):
-		config["Settings"] = {
-			"edcopilot_dir": "C:\\EDCoPilot",
+		config["OverlaySettings"] = {			
 			"idle_image_path": "idle.png",
 			"talking_image_path": "talk.png",
 			"scaling_factor": 1.0,
 			"animation_interval": 50,
 			"shake_intensity": 2,
 			"animation_delay": 0.3
+		}
+		config["EDCoPilotSettings"] = {
+			"edcopilot_dir": "C:\\EDCoPilot"
 		}
 		with open(CONFIG_FILE, "w") as config_file:
 			config.write(config_file)
@@ -201,7 +203,7 @@ def main():
 	# Validate configuration
 	overlay.validate_config()
 
-	edcopilot_dir = config.get("Settings", "edcopilot_dir", "C:\\EDCoPilot") 
+	edcopilot_dir = config.get("EDCoPilotSettings", "edcopilot_dir", "C:\\EDCoPilot") 
 	speech_status_file = os.path.join(edcopilot_dir, "working\\EDCoPilot.SpeechStatus.json")
 	speech_request_file = os.path.join(edcopilot_dir, "EDCoPilot.request.txt")
 
