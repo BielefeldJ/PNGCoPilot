@@ -203,7 +203,7 @@ def main():
 	# Validate configuration
 	overlay.validate_config()
 
-	edcopilot_dir = config.get("EDCoPilotSettings", "edcopilot_dir", "C:\\EDCoPilot") 
+	edcopilot_dir = config.get("EDCoPilotSettings", "edcopilot_dir", fallback="C:\\EDCoPilot") 
 	speech_status_file = os.path.join(edcopilot_dir, "working\\EDCoPilot.SpeechStatus.json")
 	speech_request_file = os.path.join(edcopilot_dir, "EDCoPilot.request.txt")
 
