@@ -18,11 +18,9 @@ class EDCoPilotSpeechManager:
 
 	def start_watching(self):
 		self.observer.schedule(self.handler, path=os.path.dirname(self.speech_status_file), recursive=False)
-		print(f"Watching for speech events at: {self.speech_status_file}")
 		self.observer.start()
 
 	def stop_watching(self):
-		print("Stopping the observer...")
 		self.observer.stop()
 		self.observer.join()
 
@@ -36,7 +34,6 @@ class EDCoPilotSpeechManager:
 			self.manager = manager  # Link back to the main class
 
 		def on_modified(self, event):
-			print(f"Detected change in {event.src_path}")
 			if event.src_path == self.manager.speech_status_file:
 				self.parse_speech_status()
 
@@ -49,7 +46,7 @@ class EDCoPilotSpeechManager:
 				#{"timestamp": "2025-01-31T22:04:40Z", "Event": "PlayingSpeechFile", "Character": "<EDCoPilot>", "Text": "Thank for that. The silence was getting a bit awkward there.", "Duration": 3.912}
 				event_value = data.get("Event", "Unknown")
 				character = data.get("Character", "<EDCoPilot>")
-				print(f"Detected Change → Event: {event_value}, Character: {character}")
+
 				match event_value:
 					case "PlayingSpeechFile":
 						if self.manager.on_is_speaking:
