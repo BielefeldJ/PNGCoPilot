@@ -1,12 +1,15 @@
+from time import sleep
 from PyQt5.QtWidgets import QApplication, QLabel, QMessageBox
 from PyQt5.QtGui import QPixmap
 from PyQt5.QtCore import Qt, QTimer, QPoint, QSettings
+from watchdog.observers import Observer
+from edcopilot_manager import EDCoPilotSpeechManager
 import sys
-from sound_detector import SoundDetector
 import random
 import configparser
 import os
 import logging
+
 # Configuration and state file paths
 CONFIG_FILE = "config.ini"
 
@@ -22,6 +25,7 @@ class TransparentOverlay(QLabel):
 		self.settings = QSettings("PNGCoPilot", "Overlay")
 		self.load_config()
 		self.load_state()
+		self.speak = None #this is the speak function that will be passed in from the main function
 
 		# Load images
 		try:
@@ -67,6 +71,7 @@ class TransparentOverlay(QLabel):
 		self.scaling_factor = self.config.getfloat("Settings", "scaling_factor", fallback=1.1)
 		self.animation_interval = self.config.getint("Settings", "animation_interval", fallback=50)
 		self.shake_intensity = self.config.getint("Settings", "shake_intensity", fallback=2)
+		self.animation_delay = self.config.getint("Settings", "animation_delay", fallback=0.3)
 
 	def load_state(self):
 		self.last_position = self.settings.value("last_position", QPoint(100, 100), type=QPoint)
@@ -92,6 +97,7 @@ class TransparentOverlay(QLabel):
 		if not self.is_talking:
 			self.is_talking = True
 			self.current_image = self.talking_image
+			sleep(self.animation_delay)  # Delay because it tales copilot some time before it starts talking
 			self.update_image()
 
 	def switch_to_idle(self):
@@ -178,11 +184,9 @@ def main():
 		config["Settings"] = {
 			"idle_image_path": "idle.png",
 			"talking_image_path": "talk.png",
-			"scaling_factor": 1.1,
+			"scaling_factor": 1.0,
 			"animation_interval": 50,
 			"shake_intensity": 2,
-			"threshold": 4000,
-			"sample_rate": 30
 		}
 		with open(CONFIG_FILE, "w") as config_file:
 			config.write(config_file)
@@ -195,25 +199,20 @@ def main():
 	# Validate configuration
 	overlay.validate_config()
 
-	# Extract detector settings
-	threshold = config.getint("Settings", "threshold", fallback=4000)
-	sample_rate = config.getint("Settings", "sample_rate", fallback=30)
-	device_index = config.get("Settings", "device_index", fallback="")
+	edcopilot_dir = "D:\\EDCoPilot"  # Change this to actual install path
+	speech_status_file = os.path.join(edcopilot_dir, "working\\EDCoPilot.SpeechStatus.json")
+	speech_request_file = os.path.join(edcopilot_dir, "EDCoPilot.request.txt")
 
-	detector = SoundDetector(device_index=device_index ,threshold=threshold, sample_rate=sample_rate)
-	if device_index == "":
-		device_index = detector.get_device_index()
-		config.set("Settings", "device_index", str(device_index))
-		with open(CONFIG_FILE, "w") as config_file:
-			config.write(config_file)
-
-	detector.on_sound_detected = lambda volume: overlay.switch_to_talking()
-	detector.on_no_sound_detected = lambda volume: overlay.switch_to_idle()
-
+	manager = EDCoPilotSpeechManager(speech_status_file, speech_request_file)	
+	
+	# Start watching for speech events
+	manager.on_is_speaking = lambda character: overlay.switch_to_talking()
+	manager.on_stop_speaking = lambda character: overlay.switch_to_idle()
+	manager.start_watching()
 	overlay.show()
-	detector.start()
 
 	sys.exit(app.exec_())
+
 
 if __name__ == "__main__":
 	main()
