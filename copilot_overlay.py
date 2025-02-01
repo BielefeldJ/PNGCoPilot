@@ -90,7 +90,7 @@ class TransparentOverlay(QLabel):
 			if not self.config.has_option("OverlaySettings", setting):
 				logger.error(f"Missing required setting: {setting}. Using fallback.")
 
-	def closeEvent(self, event):
+	def closeEvent(self, event):		
 		self.save_state()
 		event.accept()
 
@@ -159,8 +159,8 @@ class TransparentOverlay(QLabel):
 			self.locked = not self.locked
 			self.speak(f"Overlay {'locked' if self.locked else 'unlocked'}.")
 			event.accept()
-		elif event.key() == Qt.Key_Q:  # Press 'Q' to close
-			self.speak("Closing my visual presents <commander>.")
+		elif event.key() == Qt.Key_Q:  # Press 'Q' to close		
+			self.speak("Closing my visual presents <commander>.")	
 			self.save_state()
 			QApplication.instance().quit()
 			event.accept()
@@ -224,6 +224,7 @@ def main():
 	manager.start_watching()
 	overlay.show()
 	manager.write_speech_request("<commander>, I hope you can see me now")
+	manager.on_edcopilot_exit = lambda: app.quit()
 
 	sys.exit(app.exec_())
 

@@ -13,6 +13,7 @@ class EDCoPilotSpeechManager:
 		# Callbacks
 		self.on_is_speaking = None  
 		self.on_stop_speaking = None
+		self.on_edcopilot_exit = None
 
 		# Create the inner event handler class instance
 		self.handler = self.SpeechStatusHandler(self)
@@ -48,10 +49,13 @@ class EDCoPilotSpeechManager:
 				event_value = data.get("Event", "Unknown")
 				character = data.get("Character", "<EDCoPilot>")
 				duration = data.get("Duration", 0.0)
+				text = data.get("Text", "")
 
 				if event_value == "PlayingSpeechFile" and event_value != self.manager.last_event:
 					if self.manager.on_is_speaking:
 						self.manager.on_is_speaking(character, duration)
+					if "The virtual co-pilot service is terminating." in text:
+						self.manager.on_edcopilot_exit()
 
 				self.manager.last_event = event_value
 
