@@ -19,6 +19,12 @@ Go to the [Releases](https://github.com/BielefeldJ/PNGCoPilot/releases) section 
 ### 2. Place PNG Files
 Ensure that `idle.png` and `talk.png` are placed in the same folder as the `.exe` file.
 
+### 3. First Run
+On the first run, a default config file is generated. You don't need to change anything if:
+  - the 2 PNGs are in the same folder as the exe
+  - the 2 PNGs are named `talk.png` and `idle.png`
+  - EDCoPilot is installed at `C:\EDCoPilot`
+
 ## Usage
 
 ### 1. Start PNGCoPilot
