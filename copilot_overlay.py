@@ -96,9 +96,9 @@ class TransparentOverlay(QLabel):
 
 	def switch_to_talking(self, character):
 		if not self.is_talking and self.character == character:
+			sleep(self.animation_delay)  # Delay because it tales copilot some time before it starts talking
 			self.is_talking = True
 			self.current_image = self.talking_image
-			sleep(self.animation_delay)  # Delay because it tales copilot some time before it starts talking
 			self.update_image()
 
 	def switch_to_idle(self, character):
@@ -151,16 +151,16 @@ class TransparentOverlay(QLabel):
 	def keyPressEvent(self, event):
 		if event.key() == Qt.Key_L:  # Press 'L' to lock/unlock
 			self.locked = not self.locked
-			print(f"Overlay {'locked' if self.locked else 'unlocked'}.")
+			self.speak(f"Overlay {'locked' if self.locked else 'unlocked'}.")
 			event.accept()
 		elif event.key() == Qt.Key_Q:  # Press 'Q' to close
-			print("Closing overlay...")
+			self.speak("My visual overlay is closing now.")
 			self.save_state()
 			QApplication.instance().quit()
 			event.accept()
 		elif event.key() == Qt.Key_Plus or event.key() == Qt.Key_Equal:  # '+' to scale up
 			if self.locked:
-				print("Cannot scale while locked.")
+				self.speak("Cannot scale the overlay while locked.")
 				event.ignore()
 				return
 			self.scale_ratio *= self.scaling_factor
@@ -169,7 +169,7 @@ class TransparentOverlay(QLabel):
 			event.accept()
 		elif event.key() == Qt.Key_Minus or event.key() == Qt.Key_Underscore:  # '-' to scale down
 			if self.locked:
-				print("Cannot scale while locked.")
+				self.speak("Cannot scale while locked.")
 				event.ignore()
 				return
 			self.scale_ratio /= self.scaling_factor
@@ -211,11 +211,13 @@ def main():
 
 	manager = EDCoPilotSpeechManager(speech_status_file, speech_request_file)	
 	
+	overlay.speak = manager.write_speech_request
 	# Start watching for speech events
 	manager.on_is_speaking = lambda character: overlay.switch_to_talking(character)
 	manager.on_stop_speaking = lambda character: overlay.switch_to_idle(character)
 	manager.start_watching()
 	overlay.show()
+	manager.write_speech_request("Commander, I hope you can see me now")
 
 	sys.exit(app.exec_())
 
