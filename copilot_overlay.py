@@ -191,7 +191,7 @@ def main():
 		config["OverlaySettings"] = {			
 			"idle_image_path": "idle.png",
 			"talking_image_path": "talk.png",
-			"scaling_factor": 1.0,
+			"scaling_factor": 1.1,
 			"animation_interval": 50,
 			"shake_intensity": 2,
 			"talking_start_offset": 0.3,
