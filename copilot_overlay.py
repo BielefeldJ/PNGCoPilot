@@ -71,7 +71,8 @@ class TransparentOverlay(QLabel):
 		self.scaling_factor = self.config.getfloat("OverlaySettings", "scaling_factor", fallback=1.1)
 		self.animation_interval = self.config.getint("OverlaySettings", "animation_interval", fallback=50)
 		self.shake_intensity = self.config.getint("OverlaySettings", "shake_intensity", fallback=2)
-		self.animation_delay = self.config.getfloat("OverlaySettings", "animation_delay", fallback=0.3)
+		self.talking_start_offset = self.config.getfloat("OverlaySettings", "talking_start_offset", fallback=0.3)
+		self.talking_stop_offset = self.config.getfloat("OverlaySettings", "talking_stop_offset", fallback=0.3)
 		self.character = self.config.get("OverlaySettings", "character", fallback="<EDCoPilot>")
 
 	def load_state(self):
@@ -94,18 +95,21 @@ class TransparentOverlay(QLabel):
 		self.save_state()
 		event.accept()
 
-	def switch_to_talking(self, character, duration):
-		if not self.is_talking and self.character == character:
-			sleep(self.animation_delay)  # Delay because it tales copilot some time before it starts talking
+	def trigger_talking(self, character, duration):
+		if character == self.character:
+			sleep(self.talking_start_offset) # start offset because it takes EDCopilot some time to start speaking
+			self.switch_to_talking()
+			sleep(duration - self.talking_stop_offset) #stop offset because it takes EDCopilot some time to update the speech status
+			self.switch_to_idle()
+
+	def switch_to_talking(self):
+		if not self.is_talking:			
 			self.is_talking = True
 			self.current_image = self.talking_image
 			self.update_image()
 
-			sleep(duration) #wait untill EDCopilot is done talking
-			self.switch_to_idle(character)
-
-	def switch_to_idle(self, character):
-		if self.is_talking and self.character == character:
+	def switch_to_idle(self):
+		if self.is_talking:
 			self.is_talking = False
 			self.current_image = self.idle_image
 			self.update_image()
@@ -191,7 +195,8 @@ def main():
 			"scaling_factor": 1.0,
 			"animation_interval": 50,
 			"shake_intensity": 2,
-			"animation_delay": 0.3
+			"talking_start_offset": 0.3,
+			"talking_stop_offset": 0.3
 		}
 		config["EDCoPilotSettings"] = {
 			"edcopilot_dir": "C:\\EDCoPilot",
@@ -216,7 +221,7 @@ def main():
 	
 	overlay.speak = manager.write_speech_request
 	# Start watching for speech events
-	manager.on_is_speaking = lambda character, duration: overlay.switch_to_talking(character, duration)
+	manager.on_is_speaking = lambda character, duration: overlay.trigger_talking(character, duration)
 	manager.start_watching()
 	overlay.show()
 	manager.write_speech_request("<commander>, I hope you can see me now")
