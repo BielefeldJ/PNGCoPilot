@@ -2,7 +2,6 @@ from time import sleep
 from PyQt5.QtWidgets import QApplication, QLabel, QMessageBox
 from PyQt5.QtGui import QPixmap
 from PyQt5.QtCore import Qt, QTimer, QPoint, QSettings
-from watchdog.observers import Observer
 from edcopilot_manager import EDCoPilotSpeechManager
 import sys
 import random
