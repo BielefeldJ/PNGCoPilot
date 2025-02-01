@@ -94,12 +94,15 @@ class TransparentOverlay(QLabel):
 		self.save_state()
 		event.accept()
 
-	def switch_to_talking(self, character):
+	def switch_to_talking(self, character, duration):
 		if not self.is_talking and self.character == character:
 			sleep(self.animation_delay)  # Delay because it tales copilot some time before it starts talking
 			self.is_talking = True
 			self.current_image = self.talking_image
 			self.update_image()
+
+			sleep(duration) #wait untill EDCopilot is done talking
+			self.switch_to_idle(character)
 
 	def switch_to_idle(self, character):
 		if self.is_talking and self.character == character:
@@ -154,7 +157,7 @@ class TransparentOverlay(QLabel):
 			self.speak(f"Overlay {'locked' if self.locked else 'unlocked'}.")
 			event.accept()
 		elif event.key() == Qt.Key_Q:  # Press 'Q' to close
-			self.speak("Closing my visual presents commander.")
+			self.speak("Closing my visual presents <commander>.")
 			self.save_state()
 			QApplication.instance().quit()
 			event.accept()
@@ -213,11 +216,10 @@ def main():
 	
 	overlay.speak = manager.write_speech_request
 	# Start watching for speech events
-	manager.on_is_speaking = lambda character: overlay.switch_to_talking(character)
-	manager.on_stop_speaking = lambda character: overlay.switch_to_idle(character)
+	manager.on_is_speaking = lambda character, duration: overlay.switch_to_talking(character, duration)
 	manager.start_watching()
 	overlay.show()
-	manager.write_speech_request("Commander, I hope you can see me now")
+	manager.write_speech_request("<commander>, I hope you can see me now")
 
 	sys.exit(app.exec_())
 

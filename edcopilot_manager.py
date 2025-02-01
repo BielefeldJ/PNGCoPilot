@@ -7,6 +7,7 @@ class EDCoPilotSpeechManager:
 	def __init__(self, speech_status_file, speech_request_file):
 		self.speech_status_file = speech_status_file
 		self.speech_request_file = speech_request_file
+		self.last_event = None
 		self.observer = Observer()
 
 		# Callbacks
@@ -46,14 +47,13 @@ class EDCoPilotSpeechManager:
 				#{"timestamp": "2025-01-31T22:04:40Z", "Event": "PlayingSpeechFile", "Character": "<EDCoPilot>", "Text": "Thank for that. The silence was getting a bit awkward there.", "Duration": 3.912}
 				event_value = data.get("Event", "Unknown")
 				character = data.get("Character", "<EDCoPilot>")
+				duration = data.get("Duration", 0.0)
 
-				match event_value:
-					case "PlayingSpeechFile":
-						if self.manager.on_is_speaking:
-							self.manager.on_is_speaking(character)
-					case "FinishedSpeaking":
-						if self.manager.on_stop_speaking:
-							self.manager.on_stop_speaking(character)
+				if event_value == "PlayingSpeechFile" and event_value != self.manager.last_event:
+					if self.manager.on_is_speaking:
+						self.manager.on_is_speaking(character, duration)
+
+				self.manager.last_event = event_value
 
 			except (json.JSONDecodeError, FileNotFoundError, IOError) as e:
 				print(f"Error processing JSON: {e}")
