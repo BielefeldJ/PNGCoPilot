@@ -154,7 +154,7 @@ class TransparentOverlay(QLabel):
 			self.speak(f"Overlay {'locked' if self.locked else 'unlocked'}.")
 			event.accept()
 		elif event.key() == Qt.Key_Q:  # Press 'Q' to close
-			self.speak("My visual overlay is closing now.")
+			self.speak("Closing my visual presents commander.")
 			self.save_state()
 			QApplication.instance().quit()
 			event.accept()
@@ -169,7 +169,7 @@ class TransparentOverlay(QLabel):
 			event.accept()
 		elif event.key() == Qt.Key_Minus or event.key() == Qt.Key_Underscore:  # '-' to scale down
 			if self.locked:
-				self.speak("Cannot scale while locked.")
+				self.speak("Cannot scale the overlay while locked.")
 				event.ignore()
 				return
 			self.scale_ratio /= self.scaling_factor
