@@ -33,6 +33,7 @@ Double-click the downloaded `.exe` file to start the overlay.
 ### 2. Keyboard Shortcuts
 - `L` - Lock/unlock the overlay position.
 - `Q` - Close the overlay.
+- `S` - Mirrows the overlay.
 - `+` - Scale the overlay up.
 - `-` - Scale the overlay down.
 
