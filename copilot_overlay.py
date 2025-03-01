@@ -1,6 +1,6 @@
 from time import sleep
 from PyQt5.QtWidgets import QApplication, QLabel, QMessageBox
-from PyQt5.QtGui import QPixmap
+from PyQt5.QtGui import QPixmap, QTransform
 from PyQt5.QtCore import Qt, QTimer, QPoint, QSettings
 from edcopilot_manager import EDCoPilotSpeechManager
 import sys
@@ -78,11 +78,13 @@ class TransparentOverlay(QLabel):
 		self.last_position = self.settings.value("last_position", QPoint(100, 100), type=QPoint)
 		self.last_scale_ratio = self.settings.value("scale_ratio", 1.0, type=float)
 		self.last_locked_state = self.settings.value("locked", False, type=bool)
+		self.mirrored = self.settings.value("mirrored", False, type=bool)
 
 	def save_state(self):
 		self.settings.setValue("last_position", QPoint(self.x(), self.y()))
 		self.settings.setValue("scale_ratio", self.scale_ratio)
 		self.settings.setValue("locked", self.locked)
+		self.settings.setValue("mirrored", self.mirrored)
 
 	def validate_config(self):
 		required_settings = ["idle_image_path", "talking_image_path", "scaling_factor"]
@@ -115,6 +117,10 @@ class TransparentOverlay(QLabel):
 
 	def update_image(self):
 		scaled_image = self.current_image.scaled(self.current_image.size() * self.scale_ratio, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+		
+		if self.mirrored:
+			scaled_image = scaled_image.transformed(QTransform().scale(-1, 1), Qt.FastTransformation)
+
 		self.setPixmap(scaled_image)
 		self.resize(scaled_image.size())
 		self.setGeometry(self.x(), self.y(), scaled_image.width(), scaled_image.height())
@@ -181,6 +187,16 @@ class TransparentOverlay(QLabel):
 			self.scale_ratio /= self.scaling_factor
 			self.update_image()
 			print(f"Scaled down: ratio={self.scale_ratio:.2f}")
+			event.accept()
+		elif event.key() == Qt.Key_S: 
+			if self.locked:
+				self.speak("Cannot mirror the overlay while locked.")
+				event.ignore()
+				return
+			self.mirrored = not self.mirrored
+			self.save_state()
+			self.update_image()
+			print(f"Mirroring toggled: {'ON' if self.mirrored else 'OFF'}")
 			event.accept()
 
 def main():
