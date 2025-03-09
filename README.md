@@ -36,6 +36,8 @@ Double-click the downloaded `.exe` file to start the overlay.
 - `S` - Mirrows the overlay.
 - `+` - Scale the overlay up.
 - `-` - Scale the overlay down.
+- 'A' - Rotate the overlay to the left
+- 'D' - Rotate the overlay to the right
 
 ### 3. Drag-and-Drop Support
 - Click and drag to move the overlay when unlocked.
