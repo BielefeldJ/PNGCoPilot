@@ -79,12 +79,14 @@ class TransparentOverlay(QLabel):
 		self.last_scale_ratio = self.settings.value("scale_ratio", 1.0, type=float)
 		self.last_locked_state = self.settings.value("locked", False, type=bool)
 		self.mirrored = self.settings.value("mirrored", False, type=bool)
+		self.rotation_angle = self.settings.value("rotation_angle", 0, type=int)
 
 	def save_state(self):
 		self.settings.setValue("last_position", QPoint(self.x(), self.y()))
 		self.settings.setValue("scale_ratio", self.scale_ratio)
 		self.settings.setValue("locked", self.locked)
 		self.settings.setValue("mirrored", self.mirrored)
+		self.settings.setValue("rotation_angle", self.rotation_angle)
 
 	def validate_config(self):
 		required_settings = ["idle_image_path", "talking_image_path", "scaling_factor"]
@@ -120,6 +122,10 @@ class TransparentOverlay(QLabel):
 		
 		if self.mirrored:
 			scaled_image = scaled_image.transformed(QTransform().scale(-1, 1), Qt.FastTransformation)
+
+		if self.rotation_angle != 0:
+			transform = QTransform().rotate(self.rotation_angle)
+			scaled_image = scaled_image.transformed(transform, Qt.SmoothTransformation)
 
 		self.setPixmap(scaled_image)
 		self.resize(scaled_image.size())
@@ -161,9 +167,20 @@ class TransparentOverlay(QLabel):
 
 	# Handle key presses for lock and close
 	def keyPressEvent(self, event):
-		if event.key() == Qt.Key_L:  # Press 'L' to lock/unlock
+		if event.key() == Qt.Key_A:  # Rotate left
+			self.rotation_angle -= 1
+			self.save_state()
+			self.update_image()
+			event.accept()
+		elif event.key() == Qt.Key_D:  # Rotate right
+			self.rotation_angle += 1
+			self.save_state()
+			self.update_image()
+			event.accept()
+		elif event.key() == Qt.Key_L:  # Press 'L' to lock/unlock
 			self.locked = not self.locked
 			self.speak(f"Overlay {'locked' if self.locked else 'unlocked'}.")
+			self.save_state()
 			event.accept()
 		elif event.key() == Qt.Key_Q:  # Press 'Q' to close		
 			self.speak("Closing my visual presents <commander>.")	
