@@ -165,7 +165,7 @@ class TransparentOverlay(QLabel):
 			self.drag_start_position = None
 			event.accept()
 
-	def get_random_locked_message(self, action):
+	def get_locked_action_feedback(self, action):
 		messages = {
 			"rotate": [
 				"I can't rotate the overlay while it's locked, <Commander>.",
@@ -211,7 +211,7 @@ class TransparentOverlay(QLabel):
 	def keyPressEvent(self, event):
 		if event.key() == Qt.Key_A:  # Rotate left
 			if self.locked:
-				self.speak(self.get_random_locked_message("rotate"))
+				self.speak(self.get_locked_action_feedback("rotate"))
 				event.ignore()
 				return
 			self.rotation_angle -= 1
@@ -220,7 +220,7 @@ class TransparentOverlay(QLabel):
 			event.accept()
 		elif event.key() == Qt.Key_D:  # Rotate right
 			if self.locked:
-				self.speak(self.get_random_locked_message("rotate"))
+				self.speak(self.get_locked_action_feedback("rotate"))
 				event.ignore()
 				return
 			self.rotation_angle += 1
@@ -239,7 +239,7 @@ class TransparentOverlay(QLabel):
 			event.accept()
 		elif event.key() == Qt.Key_Plus or event.key() == Qt.Key_Equal:  # '+' to scale up
 			if self.locked:
-				self.speak(self.get_random_locked_message("scale"))
+				self.speak(self.get_locked_action_feedback("scale"))
 				event.ignore()
 				return
 			self.scale_ratio *= self.scaling_factor
@@ -248,7 +248,7 @@ class TransparentOverlay(QLabel):
 			event.accept()
 		elif event.key() == Qt.Key_Minus or event.key() == Qt.Key_Underscore:  # '-' to scale down
 			if self.locked:
-				self.speak(self.get_random_locked_message("scale"))
+				self.speak(self.get_locked_action_feedback("scale"))
 				event.ignore()
 				return
 			self.scale_ratio /= self.scaling_factor
@@ -257,7 +257,7 @@ class TransparentOverlay(QLabel):
 			event.accept()
 		elif event.key() == Qt.Key_S: 
 			if self.locked:
-				self.speak(self.get_random_locked_message("mirror"))
+				self.speak(self.get_locked_action_feedback("mirror"))
 				event.ignore()
 				return
 			self.mirrored = not self.mirrored
