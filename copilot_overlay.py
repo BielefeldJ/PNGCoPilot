@@ -168,11 +168,19 @@ class TransparentOverlay(QLabel):
 	# Handle key presses for lock and close
 	def keyPressEvent(self, event):
 		if event.key() == Qt.Key_A:  # Rotate left
+			if self.locked:
+				self.speak("Cannot rotate the overlay while locked.")
+				event.ignore()
+				return
 			self.rotation_angle -= 1
 			self.save_state()
 			self.update_image()
 			event.accept()
 		elif event.key() == Qt.Key_D:  # Rotate right
+			if self.locked:
+				self.speak("Cannot rotate the overlay while locked.")
+				event.ignore()
+				return
 			self.rotation_angle += 1
 			self.save_state()
 			self.update_image()
