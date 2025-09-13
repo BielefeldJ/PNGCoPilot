@@ -207,6 +207,25 @@ class TransparentOverlay(QLabel):
 		]
 		return random.choice(messages)
 	
+	def get_random_lock_message(self, is_locked):
+		if is_locked:
+			messages = [
+				"Overlay locked in place.",
+				"I'm locked down now, <Commander>.",
+				"Locked and secure, <Commander>.",
+				"Overlay is now locked.",
+				"You've got me locked, <Commander>."
+			]
+		else:
+			messages = [
+				"Overlay unlocked.",
+				"I'm free to move now, <Commander>.",
+				"Unlocked and ready, <Commander>.",
+				"Overlay is now unlocked.",
+				"You've unlocked me, <Commander>."
+			]
+		return random.choice(messages)
+	
 	# Handle key presses for lock and close
 	def keyPressEvent(self, event):
 		if event.key() == Qt.Key_A:  # Rotate left
@@ -229,7 +248,7 @@ class TransparentOverlay(QLabel):
 			event.accept()
 		elif event.key() == Qt.Key_L:  # Press 'L' to lock/unlock
 			self.locked = not self.locked
-			self.speak(f"Overlay {'locked' if self.locked else 'unlocked'}.")
+			self.speak(self.get_random_lock_message(self.locked))
 			self.save_state()
 			event.accept()
 		elif event.key() == Qt.Key_Q:  # Press 'Q' to close		
