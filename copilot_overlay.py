@@ -196,6 +196,16 @@ class TransparentOverlay(QLabel):
 			return random.choice(messages[action])
 		else:
 			return f"Action '{action}' is not allowed while locked."
+		
+	def get_random_close_message(self):
+		messages = [
+			"Closing my visual presents, <Commander>.",
+			"Shutting down the overlay now, <Commander>.",
+			"Turning off my visual display, <Commander>.",
+			"Overlay is going dark now, <Commander>.",
+			"Signing off the overlay, <Commander>."
+		]
+		return random.choice(messages)
 	
 	# Handle key presses for lock and close
 	def keyPressEvent(self, event):
@@ -223,7 +233,7 @@ class TransparentOverlay(QLabel):
 			self.save_state()
 			event.accept()
 		elif event.key() == Qt.Key_Q:  # Press 'Q' to close		
-			self.speak("Closing my visual presents <commander>.")	
+			self.speak(self.get_random_close_message())	
 			self.save_state()
 			QApplication.instance().quit()
 			event.accept()
